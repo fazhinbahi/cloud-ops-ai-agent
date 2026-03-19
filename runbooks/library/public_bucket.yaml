@@ -1,0 +1,64 @@
+# runbooks/library/public_bucket.yaml
+# Runbook: Public Bucket — automated security response.
+#
+# Triggered when: security agent finds a publicly accessible GCS bucket.
+# In Phase 3 this is auto-approved; the runbook adds notification + verification.
+
+name: "Public Cloud Storage Bucket Response"
+id: public_bucket
+version: "1.0"
+trigger_patterns:
+  - "public bucket"
+  - "public gcs"
+  - "publicly accessible bucket"
+  - "allUsers"
+domains: [security]
+severity_threshold: high
+
+steps:
+  - id: notify_slack
+    name: "Notify security channel"
+    type: notify
+    description: "Alert the security ops channel that a public bucket was found."
+    action_type: null
+    on_success: remove_public_access
+    on_failure: remove_public_access
+
+  - id: remove_public_access
+    name: "Remove public IAM binding"
+    type: action
+    description: "Remove allUsers and allAuthenticatedUsers from bucket IAM policy."
+    action_type: remove_bucket_public_access
+    requires_approval: false   # auto-approved in Phase 3 policy
+    on_success: verify_access_removed
+    on_failure: escalate
+
+  - id: verify_access_removed
+    name: "Verify public access removed"
+    type: observe
+    description: "Confirm bucket no longer has public IAM members."
+    action_type: null
+    on_success: audit_log
+    on_failure: escalate
+
+  - id: audit_log
+    name: "Log remediation to audit trail"
+    type: terminal
+    description: "Record successful remediation with timestamp and resource name."
+    action_type: null
+    on_success: close_runbook
+    on_failure: close_runbook
+
+  - id: escalate
+    name: "Escalate — manual intervention required"
+    type: notify
+    description: "Post escalation to Slack. Automated fix failed or was rejected."
+    action_type: null
+    on_success: close_runbook
+    on_failure: close_runbook
+
+  - id: close_runbook
+    name: "Mark runbook complete"
+    type: terminal
+    description: "Log runbook completion."
+    action_type: null

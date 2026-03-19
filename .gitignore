@@ -1,0 +1,40 @@
+# ── Secrets & credentials ─────────────────────────────────────────────────────
+.env
+.env.*
+credentials/
+*.json.key
+*-key.json
+*-credentials.json
+service_account*.json
+
+# ── Scan reports (contain real GCP resource data) ─────────────────────────────
+reports/
+
+# ── Demo & video files ────────────────────────────────────────────────────────
+cloud_ops_demo.mp4
+*.mp4
+*.mov
+
+# ── Python ────────────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+venv/
+env/
+*.egg-info/
+dist/
+build/
+.Python
+
+# ── macOS ─────────────────────────────────────────────────────────────────────
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# ── Streamlit ─────────────────────────────────────────────────────────────────
+.streamlit/secrets.toml
+
+# ── Logs ──────────────────────────────────────────────────────────────────────
+*.log
+logs/

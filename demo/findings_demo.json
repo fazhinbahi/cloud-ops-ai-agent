@@ -1,0 +1,353 @@
+{
+  "run_id": "DEMO_20260319_090000",
+  "generated_at": "2026-03-19T09:00:00.000000+00:00",
+  "summary": {
+    "total": 30,
+    "by_severity": {
+      "critical": 6,
+      "high": 8,
+      "medium": 10,
+      "low": 4,
+      "info": 2
+    },
+    "by_agent": {
+      "security": 12,
+      "cost": 7,
+      "infra": 5,
+      "incident": 5,
+      "deployment": 1
+    }
+  },
+  "findings": [
+    {
+      "id": "DEMO001",
+      "agent": "security",
+      "severity": "critical",
+      "title": "Cloud SQL (northstar-orders-db) publicly accessible from 0.0.0.0/0",
+      "detail": "The Cloud SQL instance 'northstar-orders-db' (PostgreSQL 14) has an authorised network entry of 0.0.0.0/0, making the database endpoint directly reachable from the entire internet on port 5432. This is the production orders database containing PII and payment transaction records. Any attacker with valid credentials or a SQLi vulnerability has direct network access. This must be revoked immediately and replaced with Cloud SQL Auth Proxy or a private IP configuration.",
+      "resource": "northstar-orders-db",
+      "region": "us-central1",
+      "timestamp": "2026-03-19T09:00:01.000000+00:00",
+      "tags": {}
+    },
+    {
+      "id": "DEMO002",
+      "agent": "security",
+      "severity": "critical",
+      "title": "GKE cluster 'northstar-prod-gke' has legacy ABAC and basic auth enabled",
+      "detail": "The GKE cluster 'northstar-prod-gke' running the core microservices has both Legacy Attribute-Based Access Control (ABAC) and basic authentication enabled. ABAC bypasses RBAC entirely and can grant over-broad access to cluster resources. Basic auth exposes a static username/password that cannot be rotated without cluster recreation. Both should be disabled and replaced with IAM and RBAC-based access controls. Running workloads: orders-service, inventory-service, payment-service.",
+      "resource": "northstar-prod-gke",
+      "region": "us-central1",
+      "timestamp": "2026-03-19T09:00:02.000000+00:00",
+      "tags": {}
+    },
+    {
+      "id": "DEMO003",
+      "agent": "incident",
+      "severity": "critical",
+      "title": "orders-api Cloud Run service had 2,847 HTTP 5xx errors in last 24h — no alerts firing",
+      "detail": "The production Cloud Run service 'orders-api' has logged 2,847 HTTP 500/503 errors over the past 24 hours, representing a 14% error rate on checkout requests. Despite this elevated error rate, zero alert policies are configured to notify on-call engineers. Customer orders are failing silently. Immediate action: (1) investigate root cause in Cloud Logging, (2) create an alert policy on http_request/server_error_count > 50 per minute, (3) page on-call now.",
+      "resource": "orders-api",
+      "region": "us-central1",
+      "timestamp": "2026-03-19T09:00:03.000000+00:00",
+      "tags": {}
+    },
+    {
+      "id": "DEMO004",
+      "agent": "security",
+      "severity": "critical",
+      "title": "Service account 'data-pipeline-sa' has project-level Editor role",
+      "detail": "The service account 'data-pipeline-sa@northstar-prod-001.iam.gserviceaccount.com', used by the nightly ETL pipeline, has been granted 'roles/editor' at the project level. This means the pipeline — and any attacker who compromises it — has read/write access to every resource in the project including Cloud SQL, GCS, BigQuery, Pub/Sub, and Secrets Manager. The Editor role should be revoked and replaced with the minimum set of roles required: BigQuery Data Editor, Storage Object Creator, and Pub/Sub Publisher.",
+      "resource": "data-pipeline-sa@northstar-prod-001.iam.gserviceaccount.com",
+      "region": "global",
+      "timestamp": "2026-03-19T09:00:04.000000+00:00",
+      "tags": {}
+    },
+    {
+      "id": "DEMO005",
+      "agent": "infra",
+      "severity": "critical",
+      "title": "Firewall rule allows RDP (port 3389) from any IP (0.0.0.0/0)",
+      "detail": "The firewall rule 'default-allow-rdp' permits inbound TCP traffic on port 3389 from the entire internet. RDP is one of the most targeted attack vectors globally — responsible for ransomware delivery (BlueKeep, DejaBlue) and lateral movement. All Windows-based Compute Engine instances in the default VPC are directly reachable. This rule must be disabled immediately. If RDP access is required, it should be routed through Cloud IAP.",
+      "resource": "default-allow-rdp",
+      "region": "global",
+      "timestamp": "2026-03-19T09:00:05.000000+00:00",
+      "tags": {}
+    },
+    {
+      "id": "DEMO006",
+      "agent": "incident",
+      "severity": "critical",
+      "title": "No uptime checks on orders-api.northstar.com — external availability unmonitored",
+      "detail": "The customer-facing endpoint orders-api.northstar.com has zero Cloud Monitoring uptime checks configured. A full outage of this endpoint would only be discovered via customer complaints or social media, not automated alerting. With an ongoing 14% error rate (see DEMO003), there is material risk of a complete availability failure going undetected for an extended period. Uptime checks should be created immediately with a 1-minute check interval and PagerDuty/email notification.",
+      "resource": "orders-api.northstar.com",
+      "region": "global",
+      "timestamp": "2026-03-19T09:00:06.000000+00:00",
+      "tags": {}
+    },
+    {
+      "id": "DEMO007",
+      "agent": "cost",
+      "severity": "high",
+      "title": "3 idle GKE node pools running 24/7 — estimated $2,340/month wasted",
+      "detail": "Three GKE node pools ('analytics-pool', 'batch-jobs-pool', 'legacy-pool') in the northstar-prod-gke cluster have had zero pod scheduling activity for the past 14 days. Combined they run 9 x n1-standard-4 nodes continuously, incurring approximately $2,340/month. Enabling cluster autoscaler with min-nodes=0 on these pools would allow them to scale to zero when idle. Estimated annual saving: $28,080.",
+      "resource": "northstar-prod-gke / analytics-pool, batch-jobs-pool, legacy-pool",
+      "region": "us-central1",
+      "timestamp": "2026-03-19T09:00:07.000000+00:00",
+      "tags": {}
+    },
+    {
+      "id": "DEMO008",
+      "agent": "security",
+      "severity": "high",
+      "title": "Firewall rule allows SSH (port 22) from any IP (0.0.0.0/0)",
+      "detail": "The firewall rule 'default-allow-ssh' permits inbound TCP port 22 from the entire internet on all instances in the default VPC. SSH brute-force and credential-stuffing attacks against this port are continuous and automated. Any instance without strong key-based auth or fail2ban is at risk. This should be restricted to the IAP proxy range (35.235.240.0/20) and all SSH access routed through IAP TCP forwarding.",
+      "resource": "default-allow-ssh",
+      "region": "global",
+      "timestamp": "2026-03-19T09:00:08.000000+00:00",
+      "tags": {}
+    },
+    {
+      "id": "DEMO009",
+      "agent": "cost",
+      "severity": "high",
+      "title": "Dev Cloud SQL instance running 24/7 in production project — $890/month",
+      "detail": "The Cloud SQL instance 'northstar-dev-db' (db-n1-standard-2, 100GB SSD) is deployed in the production project and has been running continuously for 47 days. Usage logs show activity only Mon-Fri 09:00-18:00 UTC. Running 24/7 versus business-hours-only costs an estimated $890/month. The instance should be moved to a dedicated dev project, or automated start/stop scheduling should be configured using Cloud Scheduler. Potential annual saving: $10,680.",
+      "resource": "northstar-dev-db",
+      "region": "us-central1",
+      "timestamp": "2026-03-19T09:00:09.000000+00:00",
+      "tags": {}
+    },
+    {
+      "id": "DEMO010",
+      "agent": "incident",
+      "severity": "high",
+      "title": "No alerting on Cloud SQL connection count — northstar-orders-db approaching limit",
+      "detail": "Cloud SQL instance 'northstar-orders-db' currently shows 487 active connections out of a maximum of 500. There are no alert policies configured for connection count. If the limit is hit, all new application connections will be refused, causing a complete outage of the orders service. An alert at 80% threshold (400 connections) should be created immediately, and connection pooling via Cloud SQL Auth Proxy or PgBouncer should be evaluated.",
+      "resource": "northstar-orders-db",
+      "region": "us-central1",
+      "timestamp": "2026-03-19T09:00:10.000000+00:00",
+      "tags": {}
+    },
+    {
+      "id": "DEMO011",
+      "agent": "security",
+      "severity": "high",
+      "title": "4 GCS buckets missing object versioning — including northstar-backups-prod",
+      "detail": "The following buckets do not have object versioning enabled: northstar-backups-prod, northstar-user-uploads, northstar-reports-archive, northstar-build-artifacts. The most critical is northstar-backups-prod, which stores nightly database backups. Without versioning, a ransomware attack or accidental deletion would permanently destroy backups. Versioning should be enabled on all four buckets immediately. For northstar-backups-prod, Object Lock (WORM) should also be considered.",
+      "resource": "northstar-backups-prod, northstar-user-uploads, northstar-reports-archive, northstar-build-artifacts",
+      "region": "US",
+      "timestamp": "2026-03-19T09:00:11.000000+00:00",
+      "tags": {}
+    },
+    {
+      "id": "DEMO012",
+      "agent": "infra",
+      "severity": "high",
+      "title": "GKE cluster running Kubernetes 1.27 — End of Life in 67 days",
+      "detail": "The production GKE cluster 'northstar-prod-gke' is running Kubernetes 1.27.9-gke.100, which reaches End of Life on 2026-05-25 (67 days from scan date). After EOL, the cluster will no longer receive security patches or bug fixes, and Google will begin automatic upgrades. Running EOL Kubernetes in production is a compliance risk and can lead to forced disruptive upgrades. A planned upgrade to 1.29 or 1.30 should be scheduled within the next 4 weeks.",
+      "resource": "northstar-prod-gke",
+      "region": "us-central1",
+      "timestamp": "2026-03-19T09:00:12.000000+00:00",
+      "tags": {}
+    },
+    {
+      "id": "DEMO013",
+      "agent": "security",
+      "severity": "high",
+      "title": "Owner role granted to contractor email contractor.dev@gmail.com",
+      "detail": "A personal Gmail account 'contractor.dev@gmail.com' has been granted 'roles/owner' at the project level. This gives full control of all resources, billing, and IAM to a personal email account that cannot be managed by the organisation's identity provider, cannot be enforced to use MFA, and cannot be immediately deprovisioned if the contractor relationship ends. The Owner binding should be removed immediately and replaced with the minimum predefined role required, scoped to the contractor's current engagement.",
+      "resource": "user:contractor.dev@gmail.com",
+      "region": "global",
+      "timestamp": "2026-03-19T09:00:13.000000+00:00",
+      "tags": {}
+    },
+    {
+      "id": "DEMO014",
+      "agent": "incident",
+      "severity": "high",
+      "title": "Log retention at 30 days — compliance requires minimum 1 year",
+      "detail": "All Cloud Logging log buckets are set to the default 30-day retention period. Northstar's data processing agreement and PCI-DSS compliance requirements mandate a minimum of 1 year of log retention. In the event of a security incident or audit, logs older than 30 days would be unavailable for forensic investigation. Custom log sinks to GCS (with 365-day lifecycle policy) or a BigQuery dataset should be configured immediately. Estimated monthly storage cost for 1-year retention: ~$120.",
+      "resource": "projects/northstar-prod-001/logging",
+      "region": "global",
+      "timestamp": "2026-03-19T09:00:14.000000+00:00",
+      "tags": {}
+    },
+    {
+      "id": "DEMO015",
+      "agent": "security",
+      "severity": "medium",
+      "title": "Gmail API enabled on production infrastructure project",
+      "detail": "The Gmail API (gmail.googleapis.com) is enabled on this production GCP project. An infrastructure project running GKE, Cloud SQL, and Pub/Sub has no legitimate reason to access Gmail. This API's presence may indicate a compromised OAuth app, an undocumented internal tool, or shadow IT. Any service account with scope gmail.send could be used for phishing or data exfiltration. The API should be disabled after identifying and removing any dependent OAuth clients.",
+      "resource": "gmail.googleapis.com",
+      "region": "global",
+      "timestamp": "2026-03-19T09:00:15.000000+00:00",
+      "tags": {}
+    },
+    {
+      "id": "DEMO016",
+      "agent": "infra",
+      "severity": "medium",
+      "title": "Default VPC has auto-create-subnetworks enabled (governance anti-pattern)",
+      "detail": "The 'default' VPC network has auto_create_subnetworks set to true, automatically creating subnets in all 25+ GCP regions. This creates an excessively broad network footprint, makes network segmentation enforcement impossible, and means workloads can accidentally be deployed to unintended regions. A custom-mode VPC with explicitly defined subnets in only required regions (us-central1 and europe-west1) should replace the default VPC.",
+      "resource": "default",
+      "region": "global",
+      "timestamp": "2026-03-19T09:00:16.000000+00:00",
+      "tags": {}
+    },
+    {
+      "id": "DEMO017",
+      "agent": "cost",
+      "severity": "medium",
+      "title": "BigQuery: 3 tables scanned daily without result caching — $1,200+/month",
+      "detail": "Three BigQuery tables (orders_fact [2.1TB], events_log [890GB], product_catalog [340GB]) are queried by scheduled reports without result caching enabled. The same queries run multiple times per day returning identical results. At $5/TB, disabling cache is costing an estimated $1,200+/month in avoidable scan charges. Enabling query result caching for these scheduled queries would reduce this to near zero. Additionally, partitioning orders_fact by date and clustering by customer_id would reduce scan volume by an estimated 70%.",
+      "resource": "northstar-prod-001:analytics.orders_fact, analytics.events_log, analytics.product_catalog",
+      "region": "US",
+      "timestamp": "2026-03-19T09:00:17.000000+00:00",
+      "tags": {}
+    },
+    {
+      "id": "DEMO018",
+      "agent": "infra",
+      "severity": "medium",
+      "title": "Cloud SQL 'northstar-analytics-db' has no automated backups configured",
+      "detail": "The Cloud SQL instance 'northstar-analytics-db' (MySQL 8.0, 500GB) has automated backups disabled. This instance stores the analytics warehouse used for business reporting. In the event of data corruption, a failed migration, or an accidental DROP TABLE, there is no backup to restore from. Automated backups should be enabled with a 7-day retention window. Point-in-time recovery should also be enabled to allow restoration to any second within the retention window.",
+      "resource": "northstar-analytics-db",
+      "region": "us-central1",
+      "timestamp": "2026-03-19T09:00:18.000000+00:00",
+      "tags": {}
+    },
+    {
+      "id": "DEMO019",
+      "agent": "security",
+      "severity": "medium",
+      "title": "Firewall rule allows ICMP from 0.0.0.0/0 (network reconnaissance risk)",
+      "detail": "The firewall rule 'default-allow-icmp' permits ICMP from the entire internet. This enables attackers to map live instances via ping sweeps, identify network topology, and conduct ICMP-based data exfiltration. While lower severity than SSH/RDP exposure, it increases the overall attack surface and should be restricted to internal IP ranges only.",
+      "resource": "default-allow-icmp",
+      "region": "global",
+      "timestamp": "2026-03-19T09:00:19.000000+00:00",
+      "tags": {}
+    },
+    {
+      "id": "DEMO020",
+      "agent": "cost",
+      "severity": "medium",
+      "title": "2 unattached persistent disks (400GB total) — $34/month wasted",
+      "detail": "Two persistent disks are in 'READY' state (not attached to any VM): 'disk-analytics-old-1' (200GB SSD, $34/month) and 'disk-batch-scratch-2' (200GB HDD, not charged but orphaned). These appear to be remnants of decommissioned Compute instances. If the data is no longer needed, they should be snapshotted for archival and then deleted. Combined monthly saving: $34. Automated disk cleanup policies should be implemented to prevent future orphaned disk accumulation.",
+      "resource": "disk-analytics-old-1, disk-batch-scratch-2",
+      "region": "us-central1",
+      "timestamp": "2026-03-19T09:00:20.000000+00:00",
+      "tags": {}
+    },
+    {
+      "id": "DEMO021",
+      "agent": "infra",
+      "severity": "medium",
+      "title": "Pub/Sub topic 'orders-topic' has no dead-letter queue configured",
+      "detail": "The Pub/Sub topic 'orders-topic' (receiving ~50,000 messages/day from the checkout flow) has no dead-letter topic (DLT) configured. If the subscriber 'orders-processor' fails to acknowledge a message after 5 delivery attempts, the message is dropped. Failed order events are being silently lost with no visibility or retry mechanism. A dead-letter topic should be configured with a max delivery attempts of 5 and a separate subscriber to process and alert on failed messages.",
+      "resource": "projects/northstar-prod-001/topics/orders-topic",
+      "region": "us-central1",
+      "timestamp": "2026-03-19T09:00:21.000000+00:00",
+      "tags": {}
+    },
+    {
+      "id": "DEMO022",
+      "agent": "incident",
+      "severity": "medium",
+      "title": "No log-based metrics for authentication failures or IAM changes",
+      "detail": "There are no log-based metrics configured for critical security events: authentication failures, IAM policy changes, service account key creation, or firewall rule modifications. Without these metrics, alert policies cannot be created for these events, meaning a brute-force attack, IAM privilege escalation, or infrastructure change goes completely unnoticed. At minimum, metrics should be created for: (1) protoPayload.methodName=SetIamPolicy, (2) protoPayload.methodName=google.iam.admin.v1.CreateServiceAccountKey, (3) protoPayload.authenticationInfo.principalEmail AND severity=ERROR.",
+      "resource": "projects/northstar-prod-001",
+      "region": "global",
+      "timestamp": "2026-03-19T09:00:22.000000+00:00",
+      "tags": {}
+    },
+    {
+      "id": "DEMO023",
+      "agent": "security",
+      "severity": "medium",
+      "title": "GCS bucket 'northstar-public-assets' has allUsers read binding — audit required",
+      "detail": "The bucket 'northstar-public-assets' has an IAM binding granting 'roles/storage.objectViewer' to 'allUsers', making all objects publicly readable. While this may be intentional for serving static web assets (CSS, images), the bucket contains 12,400 objects and its contents have not been audited. If any sensitive files were accidentally uploaded (config files, internal documents, backup files), they are publicly accessible. An audit of all objects in this bucket should be performed and a data classification policy applied.",
+      "resource": "northstar-public-assets",
+      "region": "US",
+      "timestamp": "2026-03-19T09:00:23.000000+00:00",
+      "tags": {}
+    },
+    {
+      "id": "DEMO024",
+      "agent": "deployment",
+      "severity": "medium",
+      "title": "Cloud Run services have no min-instances — cold starts impacting production latency",
+      "detail": "All 4 production Cloud Run services (orders-api, inventory-api, notification-service, auth-service) are configured with min-instances=0. Cloud Logging shows cold start events averaging 4.2 seconds occurring 340 times per day on orders-api, directly impacting customer-facing checkout latency. orders-api and auth-service should be set to min-instances=2 to eliminate cold starts on critical paths. Estimated additional cost: $45/month per service — well justified by the latency improvement.",
+      "resource": "orders-api, inventory-api, notification-service, auth-service",
+      "region": "us-central1",
+      "timestamp": "2026-03-19T09:00:24.000000+00:00",
+      "tags": {}
+    },
+    {
+      "id": "DEMO025",
+      "agent": "cost",
+      "severity": "medium",
+      "title": "No Committed Use Discounts applied — estimated 30% saving available",
+      "detail": "Analysis of 90-day Compute Engine and Cloud SQL usage shows consistent baseline utilisation that would qualify for 1-year Committed Use Discounts (CUDs). Current on-demand spend on applicable resources: ~$8,200/month. A 1-year commitment on the northstar-prod-gke cluster nodes and northstar-orders-db would reduce this by approximately 30% ($2,460/month, $29,520/year). CUD purchases carry no upfront cost and automatically apply to matching usage.",
+      "resource": "northstar-prod-001 / Compute + Cloud SQL",
+      "region": "global",
+      "timestamp": "2026-03-19T09:00:25.000000+00:00",
+      "tags": {}
+    },
+    {
+      "id": "DEMO026",
+      "agent": "security",
+      "severity": "low",
+      "title": "Default VPC in use — custom VPC with least-privilege subnets recommended",
+      "detail": "The project is using the auto-created 'default' VPC with permissive default firewall rules and subnets in all regions. While specific firewall rules should be addressed separately, the long-term recommendation is to migrate workloads to a custom-mode VPC with explicitly defined subnets, VPC Service Controls, and Private Google Access enabled. This is a governance finding that should be included in the next infrastructure modernisation cycle.",
+      "resource": "default",
+      "region": "global",
+      "timestamp": "2026-03-19T09:00:26.000000+00:00",
+      "tags": {}
+    },
+    {
+      "id": "DEMO027",
+      "agent": "cost",
+      "severity": "low",
+      "title": "Cloud Build cache not configured — redundant layer rebuilds increasing build times and cost",
+      "detail": "Cloud Build pipelines for all 4 microservices do not configure Docker layer caching. Build logs show the base Python/Node images being pulled fresh on every build (60-90 seconds per build). With an average of 25 builds/day, this wastes approximately 30-40 minutes of build time daily and incurs unnecessary network egress charges. Configuring gcr.io cache or Artifact Registry cache would reduce average build time by 40-60 seconds per build.",
+      "resource": "projects/northstar-prod-001/cloudbuild",
+      "region": "global",
+      "timestamp": "2026-03-19T09:00:27.000000+00:00",
+      "tags": {}
+    },
+    {
+      "id": "DEMO028",
+      "agent": "infra",
+      "severity": "low",
+      "title": "Cloud Run services using auto-generated URLs — no custom domain mapping",
+      "detail": "All 4 Cloud Run services are using auto-generated run.app URLs rather than custom domain mappings. While orders-api uses a custom domain (orders-api.northstar.com) via a load balancer, inventory-api and notification-service are still using auto-generated URLs in inter-service communication. This creates a coupling to GCP-specific URLs and would require application code changes if services are migrated. Custom domain mappings or a service mesh should be implemented for consistent service discovery.",
+      "resource": "inventory-api, notification-service",
+      "region": "us-central1",
+      "timestamp": "2026-03-19T09:00:28.000000+00:00",
+      "tags": {}
+    },
+    {
+      "id": "DEMO029",
+      "agent": "incident",
+      "severity": "low",
+      "title": "Cloud Trace sampling at 1% on orders-api — insufficient for latency debugging",
+      "detail": "Cloud Trace is configured with a 1% sampling rate on orders-api. With 50,000 requests/day, only ~500 traces are captured. During the current elevated error period (14% error rate), many failed requests are not being traced, making root cause analysis significantly harder. Sampling should be increased to 10-20% on orders-api temporarily, and error sampling should be configured to capture 100% of traces where HTTP status >= 500.",
+      "resource": "orders-api",
+      "region": "us-central1",
+      "timestamp": "2026-03-19T09:00:29.000000+00:00",
+      "tags": {}
+    },
+    {
+      "id": "DEMO030",
+      "agent": "security",
+      "severity": "info",
+      "title": "Binary Authorization not configured on GKE cluster",
+      "detail": "The GKE cluster 'northstar-prod-gke' does not have Binary Authorization enabled. Binary Authorization enforces that only container images from trusted registries, signed by approved build pipelines, can be deployed to the cluster. Without it, any image — including potentially malicious ones — can be deployed if an attacker gains kubectl access or compromises a CI/CD pipeline. This is a defence-in-depth control recommended for production GKE clusters handling sensitive data.",
+      "resource": "northstar-prod-gke",
+      "region": "us-central1",
+      "timestamp": "2026-03-19T09:00:30.000000+00:00",
+      "tags": {}
+    }
+  ]
+}

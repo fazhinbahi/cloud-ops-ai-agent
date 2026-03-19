@@ -1,0 +1,158 @@
+# compliance/frameworks/cis_gcp.yaml
+# CIS Google Cloud Platform Foundation Benchmark v2.0 — selected controls.
+#
+# Each rule has:
+#   id          — unique CIS control ID
+#   title       — short description
+#   section     — CIS section (e.g. "1 - Identity and Access Management")
+#   severity    — critical | high | medium | low
+#   check_type  — maps to a Python check function in compliance/engine.py
+#   parameters  — passed to the check function
+#   remediation — plain English fix instructions
+#   auto_fix    — action_type from execution dispatch table (Phase 3), if available
+
+name: "CIS GCP Foundation Benchmark v2.0"
+version: "2.0"
+
+rules:
+
+  # ── Section 1: Identity and Access Management ─────────────────────────────
+
+  - id: "1.1"
+    title: "Ensure that corporate login credentials are used"
+    section: "1 - Identity and Access Management"
+    severity: high
+    check_type: no_gmail_accounts_in_iam
+    parameters: {}
+    remediation: "Remove personal Gmail accounts from project IAM. Use organization GSuite accounts only."
+    auto_fix: null
+
+  - id: "1.4"
+    title: "Ensure that service account keys are rotated within 90 days"
+    section: "1 - Identity and Access Management"
+    severity: high
+    check_type: service_account_key_age
+    parameters:
+      max_age_days: 90
+    remediation: "Rotate service account keys older than 90 days. Delete unused keys."
+    auto_fix: null
+
+  - id: "1.5"
+    title: "Ensure that service accounts do not have admin privileges"
+    section: "1 - Identity and Access Management"
+    severity: critical
+    check_type: no_service_account_admin_roles
+    parameters:
+      forbidden_roles:
+        - roles/owner
+        - roles/editor
+        - roles/iam.serviceAccountAdmin
+    remediation: "Remove owner/editor roles from service accounts. Use least-privilege custom roles."
+    auto_fix: null
+
+  - id: "1.6"
+    title: "Ensure that Service Account has no Admin privileges"
+    section: "1 - Identity and Access Management"
+    severity: high
+    check_type: no_user_managed_keys_on_default_sa
+    parameters: {}
+    remediation: "Avoid creating user-managed keys for default service accounts."
+    auto_fix: null
+
+  # ── Section 3: Networking ─────────────────────────────────────────────────
+
+  - id: "3.1"
+    title: "Ensure that the default network does not exist in a project"
+    section: "3 - Networking"
+    severity: medium
+    check_type: no_default_network
+    parameters: {}
+    remediation: "Delete the 'default' VPC network. Create custom VPCs with explicit firewall rules."
+    auto_fix: null
+
+  - id: "3.6"
+    title: "Ensure that SSH access is restricted from the internet"
+    section: "3 - Networking"
+    severity: critical
+    check_type: no_open_ssh
+    parameters:
+      port: 22
+      open_ranges:
+        - "0.0.0.0/0"
+        - "::/0"
+    remediation: "Restrict SSH firewall rules to known IP ranges. Use IAP (Identity-Aware Proxy) for SSH access."
+    auto_fix: disable_firewall_rule
+
+  - id: "3.7"
+    title: "Ensure that RDP access is restricted from the internet"
+    section: "3 - Networking"
+    severity: critical
+    check_type: no_open_rdp
+    parameters:
+      port: 3389
+      open_ranges:
+        - "0.0.0.0/0"
+        - "::/0"
+    remediation: "Restrict RDP firewall rules to known IP ranges. Use IAP for Windows VM access."
+    auto_fix: disable_firewall_rule
+
+  # ── Section 5: Logging ────────────────────────────────────────────────────
+
+  - id: "5.1"
+    title: "Ensure that Cloud Audit Logging is configured properly"
+    section: "5 - Logging"
+    severity: high
+    check_type: audit_logging_enabled
+    parameters:
+      required_log_types:
+        - DATA_READ
+        - DATA_WRITE
+        - ADMIN_READ
+    remediation: "Enable Data Read and Data Write audit logs for all services in IAM > Audit Logs."
+    auto_fix: null
+
+  - id: "5.2"
+    title: "Ensure that sinks are configured for all log entries"
+    section: "5 - Logging"
+    severity: medium
+    check_type: log_sink_exists
+    parameters: {}
+    remediation: "Create a log sink to export all logs to Cloud Storage or BigQuery for long-term retention."
+    auto_fix: null
+
+  # ── Section 6: Cloud Storage ──────────────────────────────────────────────
+
+  - id: "6.1"
+    title: "Ensure that Cloud Storage bucket is not anonymously or publicly accessible"
+    section: "6 - Cloud Storage"
+    severity: critical
+    check_type: no_public_buckets
+    parameters:
+      public_members:
+        - allUsers
+        - allAuthenticatedUsers
+    remediation: "Remove allUsers and allAuthenticatedUsers from bucket IAM policies."
+    auto_fix: remove_bucket_public_access
+
+  - id: "6.2"
+    title: "Ensure that Cloud Storage buckets have uniform bucket-level access enabled"
+    section: "6 - Cloud Storage"
+    severity: medium
+    check_type: bucket_uniform_access
+    parameters: {}
+    remediation: "Enable uniform bucket-level access on all Cloud Storage buckets."
+    auto_fix: null
+
+  # ── Section 7: BigQuery ───────────────────────────────────────────────────
+
+  - id: "7.1"
+    title: "Ensure that BigQuery datasets are not publicly accessible"
+    section: "7 - BigQuery"
+    severity: critical
+    check_type: no_public_bigquery_datasets
+    parameters:
+      public_members:
+        - allUsers
+        - allAuthenticatedUsers
+    remediation: "Remove allUsers and allAuthenticatedUsers from BigQuery dataset access controls."
+    auto_fix: null

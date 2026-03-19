@@ -1,0 +1,79 @@
+# runbooks/library/vm_high_cpu.yaml
+# Runbook: VM High CPU — automated multi-step incident response.
+#
+# Triggered when: incident agent finds a VM with sustained high CPU usage.
+# Trigger pattern (matched against finding titles): "high cpu"
+
+name: "VM High CPU Response"
+id: vm_high_cpu
+version: "1.0"
+trigger_patterns:
+  - "high cpu"
+  - "cpu usage"
+  - "cpu utilization"
+domains: [infra, incident]
+severity_threshold: high    # only trigger for high or critical findings
+
+steps:
+  - id: check_autoscaling
+    name: "Check if autoscaling is enabled"
+    type: observe
+    description: "Query the instance group to determine if autoscaling is already configured."
+    action_type: null
+    on_success: notify_slack
+    on_failure: notify_slack   # always proceed, autoscaling check is informational
+
+  - id: notify_slack
+    name: "Notify on-call via Slack"
+    type: notify
+    description: "Post an alert to the ops channel with VM name, CPU %, and resource link."
+    action_type: null
+    on_success: wait_for_cooldown
+    on_failure: wait_for_cooldown
+
+  - id: wait_for_cooldown
+    name: "Wait 10 minutes for natural cooldown"
+    type: wait
+    description: "Allow 10 minutes for the CPU spike to resolve naturally (e.g. batch job finishing)."
+    wait_seconds: 600
+    on_success: verify_cpu_resolved
+    on_failure: escalate
+
+  - id: verify_cpu_resolved
+    name: "Re-check CPU utilisation"
+    type: observe
+    description: "Re-run the infra agent's VM check to see if CPU has dropped below threshold."
+    action_type: null
+    on_success: close_runbook     # CPU resolved on its own
+    on_failure: stop_vm_if_idle   # still high — take action
+
+  - id: stop_vm_if_idle
+    name: "Stop VM if confirmed idle/runaway"
+    type: action
+    description: "Stop the VM if it has no active connections and CPU is still >90% for >30 min."
+    action_type: stop_vm
+    requires_approval: true       # always ask before stopping a VM
+    on_success: verify_stop
+    on_failure: escalate
+
+  - id: verify_stop
+    name: "Verify VM stopped successfully"
+    type: observe
+    description: "Confirm the VM status is TERMINATED or STOPPED."
+    action_type: null
+    on_success: close_runbook
+    on_failure: escalate
+
+  - id: escalate
+    name: "Escalate to on-call engineer"
+    type: notify
+    description: "Post escalation message to Slack with full runbook context."
+    action_type: null
+    on_success: close_runbook
+    on_failure: close_runbook
+
+  - id: close_runbook
+    name: "Mark runbook complete"
+    type: terminal
+    description: "Log runbook completion to audit trail."
+    action_type: null

@@ -1,0 +1,26 @@
+{
+  "project": "local-pointer-489706-f8",
+  "resources": [
+    {
+      "type": "bucket",
+      "name": "cloudops-demo-public-local-pointer-4897"
+    },
+    {
+      "type": "service_account",
+      "email": "sandbox-demo-sa@local-pointer-489706-f8.iam.gserviceaccount.com",
+      "role": "roles/editor"
+    },
+    {
+      "type": "bigquery_dataset",
+      "dataset_id": "sandbox_demo_dataset"
+    },
+    {
+      "type": "firewall_note",
+      "detail": "default-allow-ssh and default-allow-rdp open to 0.0.0.0/0 (pre-existing)"
+    },
+    {
+      "type": "monitoring_note",
+      "detail": "Zero alert policies / uptime checks (pre-existing default state)"
+    }
+  ]
+}

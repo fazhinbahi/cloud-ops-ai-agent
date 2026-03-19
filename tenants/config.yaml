@@ -1,0 +1,48 @@
+# tenants/config.yaml — Multi-tenant team configuration.
+#
+# Each team has:
+#   id:           unique slug
+#   name:         display name
+#   domains:      which agent domains they own (infra|cost|security|incident|deployment|data)
+#   projects:     GCP project IDs in scope (empty = all projects)
+#   slack_channel: Slack channel for this team's findings
+#   policy_file:  optional override policy YAML (defaults to policies/default.yaml)
+#   severity_filter: only show findings at or above this severity
+#   compliance_frameworks: which compliance frameworks apply to this team
+
+teams:
+  - id: platform
+    name: Platform Engineering
+    domains: [infra, deployment, cost]
+    projects: []
+    slack_channel: "#platform-ops"
+    policy_file: ""
+    severity_filter: medium
+    compliance_frameworks: [cis_gcp]
+
+  - id: security
+    name: Security Team
+    domains: [security, compliance]
+    projects: []
+    slack_channel: "#security-alerts"
+    policy_file: ""
+    severity_filter: low
+    compliance_frameworks: [cis_gcp]
+
+  - id: data
+    name: Data Engineering
+    domains: [data, cost]
+    projects: []
+    slack_channel: "#data-ops"
+    policy_file: ""
+    severity_filter: medium
+    compliance_frameworks: []
+
+  - id: oncall
+    name: On-Call SRE
+    domains: [infra, incident, deployment, security, cost, data]
+    projects: []
+    slack_channel: "#cloud-ops"
+    policy_file: ""
+    severity_filter: high
+    compliance_frameworks: [cis_gcp]

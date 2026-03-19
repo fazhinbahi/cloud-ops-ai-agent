@@ -1,0 +1,67 @@
+# policies/default.yaml — Phase 3 auto-approval policy rules.
+#
+# Rules are evaluated top-to-bottom. First match wins.
+# Each rule must specify at least one condition field.
+#
+# decision values:
+#   auto_approve   — execute without human input
+#   require_human  — show the approval gate prompt (Phase 2 behaviour)
+#   auto_reject    — silently reject, never execute
+#
+# Condition fields (all optional, but at least one required):
+#   action_types   — list of action_type strings
+#   categories     — list of category strings (security, cost, reliability, compliance)
+#   blast_radius   — list of allowed blast-radius values (low, medium, high)
+#   reversibility  — list of allowed reversibility values
+#   severities     — list of finding severities that triggered the action
+
+rules:
+  # ── Security: safe firewall hardening ────────────────────────────────────────
+  - name: auto_approve_firewall_disable
+    description: "Disabling a single low-blast firewall rule is safe and fully reversible."
+    action_types: [disable_firewall_rule]
+    blast_radius: [low]
+    reversibility: [reversible]
+    decision: auto_approve
+
+  - name: auto_approve_firewall_restrict
+    description: "Restricting 0.0.0.0/0 source ranges is targeted and reversible."
+    action_types: [restrict_firewall_source_range]
+    blast_radius: [low, medium]
+    reversibility: [reversible]
+    decision: auto_approve
+
+  # ── Security: storage public access removal ───────────────────────────────────
+  - name: auto_approve_bucket_public_access
+    description: "Removing allUsers/allAuthenticatedUsers from a bucket is reversible."
+    action_types: [remove_bucket_public_access]
+    blast_radius: [low, medium]
+    reversibility: [reversible]
+    decision: auto_approve
+
+  # ── Compute: stopping a VM requires human review ─────────────────────────────
+  - name: require_human_stop_vm
+    description: "Stopping a VM could disrupt running workloads — always ask first."
+    action_types: [stop_vm]
+    decision: require_human
+
+  # ── Compute: deleting a VM is irreversible — always require human ─────────────
+  - name: require_human_delete_vm
+    description: "Deleting a VM is irreversible. Always require explicit human approval."
+    action_types: [delete_stopped_vm]
+    decision: require_human
+
+  # ── Catch-all: anything high blast radius needs a human ───────────────────────
+  - name: require_human_high_blast
+    description: "Any action with high blast radius must be human-approved."
+    blast_radius: [high]
+    decision: require_human
+
+  # ── Catch-all: irreversible actions always require human ─────────────────────
+  - name: block_irreversible_without_flag
+    description: "Irreversible actions without explicit confirmation are rejected."
+    reversibility: [irreversible]
+    decision: require_human
+
+# If no rule matches, fall back to this decision.
+default: require_human

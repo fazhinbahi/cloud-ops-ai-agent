@@ -1,0 +1,52 @@
+# slo/definitions.yaml — Service Level Objective definitions.
+#
+# Each SLO defines an availability or latency target for a GCP service.
+# The SLO manager queries Cloud Monitoring to compute error budget burn rate.
+#
+# Fields:
+#   id:          unique identifier
+#   name:        human-readable name
+#   service:     GCP resource name (Cloud Run service, GKE workload, etc.)
+#   service_type: cloud_run | gke | uptime_check | custom
+#   target:      SLO target as a decimal (e.g. 0.999 = 99.9%)
+#   window_days: rolling window for error budget calculation (default: 30)
+#   metric:      Cloud Monitoring metric type (optional — uses defaults per service_type)
+#   alert_burn_rate_threshold: alert when burn rate exceeds this multiple of 1.0
+
+slos:
+  - id: payments-api-availability
+    name: Payments API Availability
+    service: payments-api
+    service_type: cloud_run
+    region: us-central1
+    target: 0.999
+    window_days: 30
+    alert_burn_rate_threshold: 2.0
+
+  - id: auth-service-latency
+    name: Auth Service P99 Latency < 500ms
+    service: auth-service
+    service_type: cloud_run
+    region: us-central1
+    target: 0.95
+    window_days: 30
+    metric: run.googleapis.com/request_latencies
+    alert_burn_rate_threshold: 2.0
+
+  - id: main-cluster-node-readiness
+    name: GKE Node Readiness
+    service: main-cluster
+    service_type: gke
+    region: us-central1
+    target: 0.999
+    window_days: 30
+    alert_burn_rate_threshold: 3.0
+
+  - id: homepage-uptime
+    name: Homepage Uptime Check
+    service: homepage-check
+    service_type: uptime_check
+    region: global
+    target: 0.999
+    window_days: 30
+    alert_burn_rate_threshold: 2.0
